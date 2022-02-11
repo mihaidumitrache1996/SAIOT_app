@@ -6,6 +6,7 @@ Public Class Form1
     Public Event ScanDataRecieved(ByVal data As String)
     WithEvents comPort As SerialPort
 
+
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
     End Sub
 
