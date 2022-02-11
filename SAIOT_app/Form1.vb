@@ -84,42 +84,49 @@ out:
     End Sub
 
     Private Sub comPort_DataReceived(ByVal sender As Object, ByVal e As System.IO.Ports.SerialDataReceivedEventArgs) Handles comPort.DataReceived
-        On Error Resume Next
-        Dim str As String = ""
-        If e.EventType = SerialData.Chars Then
-            Do
-                Dim bytecount As Integer = comPort.BytesToRead
+        Try
+            Dim str As String = ""
+            If e.EventType = SerialData.Chars Then
+                Do
+                    Dim bytecount As Integer = comPort.BytesToRead
 
-                If bytecount = 0 Then
-                    Exit Do
-                End If
-                Dim byteBuffer(bytecount) As Byte
+                    If bytecount = 0 Then
+                        Exit Do
+                    End If
+                    Dim byteBuffer(bytecount) As Byte
 
-                comPort.Read(byteBuffer, 0, bytecount)
-                str = str & System.Text.Encoding.ASCII.GetString(byteBuffer, 0, 1)
-                If str = "" Then Exit Do
-                Me.Invoke(Sub() ListBox1.Items.Add("Comanda primita: " & str))
-                Dim response As String = ""
-                Select Case str
-                    Case "wheather"
-                        response = getRequest(routes.weatherForecast & "/1")
-                    Case "account"
-                        response = getRequest(routes.weatherForecast & "/2")
-                End Select
-                If response <> "" Then
-                    For i As Integer = 0 To response.Length
-                        comPort.Write(response(i))
-                        System.Threading.Thread.Sleep(1)
-                    Next
-                End If
-            Loop
-        End If
+                    comPort.Read(byteBuffer, 0, bytecount)
+                    str = str & System.Text.Encoding.ASCII.GetString(byteBuffer, 0, 1)
+                    If str = "" Then Exit Do
+                    Me.Invoke(Sub() ListBox1.Items.Add("Comanda primita: " & str))
+                    Dim response As String = ""
+                    Select Case str
+                        Case "wheather"
+                            response = getRequest(routes.weatherForecast & "/1")
+                        Case "account"
+                            response = getRequest(routes.weatherForecast & "/2")
+                    End Select
+                    If response <> "" Then
+                        For i As Integer = 0 To response.Length
+                            comPort.Write(response(i))
+                            System.Threading.Thread.Sleep(1)
+                        Next
+                    End If
+                Loop
+            End If
 
-        RaiseEvent ScanDataRecieved(str)
+            RaiseEvent ScanDataRecieved(str)
+        Catch
+        End Try
     End Sub
 
     Private Sub RadioButton1_CheckedChanged(sender As Object, e As EventArgs) Handles RadioButton1.CheckedChanged
         TextBox2.Visible = RadioButton1.Checked
+        If RadioButton1.Checked Then
+            If TextBox1.Text = "" OrElse TextBox1.Text = "Cont" Then TextBox1.Text = "Latitudine"
+        Else
+            If TextBox1.Text = "" OrElse TextBox1.Text = "Latitudine" Then TextBox1.Text = "Cont"
+        End If
     End Sub
 
     Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
