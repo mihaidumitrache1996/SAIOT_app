@@ -1,4 +1,4 @@
-﻿Imports System.IO.Ports
+Imports System.IO.Ports
 Imports System.Runtime.InteropServices
 
 Public Class Form1
@@ -8,6 +8,11 @@ Public Class Form1
 
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Dim x As String = ""
+        For Each sp As String In My.Computer.Ports.SerialPortNames
+            x = x + " " + sp
+        Next
+        Connect()
     End Sub
 
     Private Sub PictureBox5_Click(sender As Object, e As EventArgs) Handles PictureBox5.Click
@@ -70,8 +75,24 @@ out:
 
     Public Sub Connect()
         Try
-            comPort = My.Computer.Ports.OpenSerialPort("COM5", 9600)
-        Catch
+            comPort = My.Computer.Ports.OpenSerialPort("COM3", 115200, Parity.None, 5, StopBits.One)
+            comPort.ReadTimeout = 1000
+            AddHandler comPort.DataReceived, AddressOf comPort_DataReceived
+            AddHandler comPort.ErrorReceived, AddressOf comPort_DataReceived123
+            AddHandler comPort.PinChanged, AddressOf comPort_DataReceived1234
+            Dim returnStr As String = ""
+            'Do
+            '    Dim Incoming As String = comPort.ReadLine()
+            '    If Incoming Is Nothing Then
+            '        Exit Do
+            '    Else
+            '        returnStr &= Incoming & vbCrLf
+            '    End If
+            'Loop
+
+            '  comPort.Write("1")
+        Catch ex As Exception
+            MsgBox(ex.Message)
         End Try
     End Sub
 
@@ -83,8 +104,8 @@ out:
 
     End Sub
 
-    Private Sub comPort_DataReceived(ByVal sender As Object, ByVal e As System.IO.Ports.SerialDataReceivedEventArgs) Handles comPort.DataReceived
-        On Error Resume Next
+    Dim receivedCommand As Boolean = False
+    Private Sub comPort_DataReceived(ByVal sender As Object, ByVal e As System.IO.Ports.SerialDataReceivedEventArgs)
         Dim str As String = ""
         If e.EventType = SerialData.Chars Then
             Do
@@ -93,24 +114,52 @@ out:
                 If bytecount = 0 Then
                     Exit Do
                 End If
-                Dim byteBuffer(bytecount) As Byte
+                'Dim byteBuffer(bytecount) As Byte
+                Try
+                    str = comPort.ReadLine()
 
-                comPort.Read(byteBuffer, 0, bytecount)
-                str = str & System.Text.Encoding.ASCII.GetString(byteBuffer, 0, 1)
+                Catch
+                    Exit Do
+                End Try
+                'comPort.Read(byteBuffer, 0, bytecount)
+                'str = str & System.Text.Encoding.ASCII.GetString(byteBuffer, 0, 1)
                 If str = "" Then Exit Do
                 Me.Invoke(Sub() ListBox1.Items.Add("Comanda primita: " & str))
+                Me.Invoke(Sub() Panel1.VerticalScroll.Maximum = ListBox1.Height)
                 Dim response As String = ""
-                Select Case str
-                    Case "wheather"
+                Select Case str.Trim
+                    Case "0"
+                        comPort.Write(response("@"))
+                        System.Threading.Thread.Sleep(1)
+                        comPort.Write(response("$"))
+                    Case "GET  1", "wheather"
+                        If Not receivedCommand Then
+                            receivedCommand = True
+                        Else
+                            receivedCommand = False
+                            Return
+                        End If
                         response = getRequest(routes.weatherForecast & "/1")
-                    Case "account"
+                    Case "GET  2", "account"
+                        If Not receivedCommand Then
+                            receivedCommand = True
+                        Else
+                            receivedCommand = False
+                            Return
+                        End If
                         response = getRequest(routes.weatherForecast & "/2")
                 End Select
                 If response <> "" Then
-                    For i As Integer = 0 To response.Length
+                    If (response.Length = 1) Then response = "0" & str
+                    If (response.Length > 2) Then response = "99"
+
+                    For i As Integer = 0 To response.Length - 1
                         comPort.Write(response(i))
-                        System.Threading.Thread.Sleep(1)
+                        System.Threading.Thread.Sleep(100)
                     Next
+
+                    Me.Invoke(Sub() ListBox1.Items.Add("Comanda trimisa: " & response))
+                    Me.Invoke(Sub() Panel1.VerticalScroll.Maximum = ListBox1.Height)
                 End If
             Loop
         End If
@@ -122,7 +171,22 @@ out:
         TextBox2.Visible = RadioButton1.Checked
     End Sub
 
+    Private Sub comPort_DataReceived123(sender As Object, e As Object)
+        MsgBox("sss")
+
+    End Sub
+    Private Sub comPort_DataReceived1234(sender As Object, e As Object)
+        MsgBox("sss")
+
+    End Sub
+
     Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
         Disconnect()
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        comPort.Write(TextBox3.Text & Environment.NewLine)
+        comPort.Write(Environment.NewLine)
+        TextBox3.Text = ""
     End Sub
 End Class
