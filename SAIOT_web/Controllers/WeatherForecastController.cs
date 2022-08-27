@@ -51,7 +51,7 @@ namespace SAIOT_web.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<WeatherForecast> GetTodoItem(int id)
+        public async Task<string> GetTodoItem(int id)
         {
             string fileContent = "";
             if (id == 1)
@@ -73,22 +73,27 @@ namespace SAIOT_web.Controllers
                     wheather = JsonConvert.DeserializeObject<WheatherAPI>(apiResponse);
                 }
 
-                return new WeatherForecast{
-                    Date = DateTime.Now.ToString("dd-MM-yyyy"),
-                    TemperatureC = wheather.main.temp,
-                    Summary = fileContent
-                };
-                
+                //return new WeatherForecast{
+                //    Date = DateTime.Now.ToString("dd-MM-yyyy"),
+                //    TemperatureC = wheather.main.temp,
+                //    Summary = fileContent
+                //};
+                string rez = wheather.main.temp.ToString();
+
+                return rez.Length > 2 ? rez.Substring(0,2) : rez;
+
+
             }
             if (System.IO.File.Exists("account"))
             {
                 fileContent = System.IO.File.ReadAllText("account");
             }
-            return new WeatherForecast
-                {
-                    Date = DateTime.Now.ToString("dd-MM-yyyy"),
-                    Summary = "11"
-            };
+            //return new WeatherForecast
+            //    {
+            //        Date = DateTime.Now.ToString("dd-MM-yyyy"),
+            //        Summary = "11"
+            //};
+            return fileContent != "" ? fileContent : "11";
 
         }
 
