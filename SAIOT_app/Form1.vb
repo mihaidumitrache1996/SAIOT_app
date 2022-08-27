@@ -165,10 +165,17 @@ out:
         End If
 
         RaiseEvent ScanDataRecieved(str)
+        Catch
+        End Try
     End Sub
 
     Private Sub RadioButton1_CheckedChanged(sender As Object, e As EventArgs) Handles RadioButton1.CheckedChanged
         TextBox2.Visible = RadioButton1.Checked
+        If RadioButton1.Checked Then
+            If TextBox1.Text = "" OrElse TextBox1.Text = "Cont" Then TextBox1.Text = "Latitudine"
+        Else
+            If TextBox1.Text = "" OrElse TextBox1.Text = "Latitudine" Then TextBox1.Text = "Cont"
+        End If
     End Sub
 
     Private Sub comPort_DataReceived123(sender As Object, e As Object)
