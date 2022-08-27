@@ -106,65 +106,66 @@ out:
 
     Dim receivedCommand As Boolean = False
     Private Sub comPort_DataReceived(ByVal sender As Object, ByVal e As System.IO.Ports.SerialDataReceivedEventArgs)
-        Dim str As String = ""
-        If e.EventType = SerialData.Chars Then
-            Do
-                Dim bytecount As Integer = comPort.BytesToRead
+        Try
+            Dim str As String = ""
+            If e.EventType = SerialData.Chars Then
+                Do
+                    Dim bytecount As Integer = comPort.BytesToRead
 
-                If bytecount = 0 Then
-                    Exit Do
-                End If
-                'Dim byteBuffer(bytecount) As Byte
-                Try
-                    str = comPort.ReadLine()
+                    If bytecount = 0 Then
+                        Exit Do
+                    End If
+                    'Dim byteBuffer(bytecount) As Byte
+                    Try
+                        str = comPort.ReadLine()
 
-                Catch
-                    Exit Do
-                End Try
-                'comPort.Read(byteBuffer, 0, bytecount)
-                'str = str & System.Text.Encoding.ASCII.GetString(byteBuffer, 0, 1)
-                If str = "" Then Exit Do
-                Me.Invoke(Sub() ListBox1.Items.Add("Comanda primita: " & str))
-                Me.Invoke(Sub() Panel1.VerticalScroll.Maximum = ListBox1.Height)
-                Dim response As String = ""
-                Select Case str.Trim
-                    Case "0"
-                        comPort.Write(response("@"))
-                        System.Threading.Thread.Sleep(1)
-                        comPort.Write(response("$"))
-                    Case "GET  1", "wheather"
-                        If Not receivedCommand Then
-                            receivedCommand = True
-                        Else
-                            receivedCommand = False
-                            Return
-                        End If
-                        response = getRequest(routes.weatherForecast & "/1")
-                    Case "GET  2", "account"
-                        If Not receivedCommand Then
-                            receivedCommand = True
-                        Else
-                            receivedCommand = False
-                            Return
-                        End If
-                        response = getRequest(routes.weatherForecast & "/2")
-                End Select
-                If response <> "" Then
-                    If (response.Length = 1) Then response = "0" & str
-                    If (response.Length > 2) Then response = "99"
-
-                    For i As Integer = 0 To response.Length - 1
-                        comPort.Write(response(i))
-                        System.Threading.Thread.Sleep(100)
-                    Next
-
-                    Me.Invoke(Sub() ListBox1.Items.Add("Comanda trimisa: " & response))
+                    Catch
+                        Exit Do
+                    End Try
+                    'comPort.Read(byteBuffer, 0, bytecount)
+                    'str = str & System.Text.Encoding.ASCII.GetString(byteBuffer, 0, 1)
+                    If str = "" Then Exit Do
+                    Me.Invoke(Sub() ListBox1.Items.Add("Comanda primita: " & str))
                     Me.Invoke(Sub() Panel1.VerticalScroll.Maximum = ListBox1.Height)
-                End If
-            Loop
-        End If
+                    Dim response As String = ""
+                    Select Case str.Trim
+                        Case "0"
+                            comPort.Write(response("@"))
+                            System.Threading.Thread.Sleep(1)
+                            comPort.Write(response("$"))
+                        Case "GET  1", "wheather"
+                            If Not receivedCommand Then
+                                receivedCommand = True
+                            Else
+                                receivedCommand = False
+                                Return
+                            End If
+                            response = getRequest(routes.weatherForecast & "/1")
+                        Case "GET  2", "account"
+                            If Not receivedCommand Then
+                                receivedCommand = True
+                            Else
+                                receivedCommand = False
+                                Return
+                            End If
+                            response = getRequest(routes.weatherForecast & "/2")
+                    End Select
+                    If response <> "" Then
+                        If (response.Length = 1) Then response = "0" & str
+                        If (response.Length > 2) Then response = "99"
 
-        RaiseEvent ScanDataRecieved(str)
+                        For i As Integer = 0 To response.Length - 1
+                            comPort.Write(response(i))
+                            System.Threading.Thread.Sleep(100)
+                        Next
+
+                        Me.Invoke(Sub() ListBox1.Items.Add("Comanda trimisa: " & response))
+                        Me.Invoke(Sub() Panel1.VerticalScroll.Maximum = ListBox1.Height)
+                    End If
+                Loop
+            End If
+
+            RaiseEvent ScanDataRecieved(str)
         Catch
         End Try
     End Sub
