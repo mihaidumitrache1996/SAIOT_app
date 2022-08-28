@@ -78,17 +78,7 @@ out:
             comPort = My.Computer.Ports.OpenSerialPort("COM3", 115200, Parity.None, 5, StopBits.One)
             comPort.ReadTimeout = 1000
             AddHandler comPort.DataReceived, AddressOf comPort_DataReceived
-            AddHandler comPort.ErrorReceived, AddressOf comPort_DataReceived123
-            AddHandler comPort.PinChanged, AddressOf comPort_DataReceived1234
-            Dim returnStr As String = ""
-            'Do
-            '    Dim Incoming As String = comPort.ReadLine()
-            '    If Incoming Is Nothing Then
-            '        Exit Do
-            '    Else
-            '        returnStr &= Incoming & vbCrLf
-            '    End If
-            'Loop
+
 
             '  comPort.Write("1")
         Catch ex As Exception
@@ -105,6 +95,7 @@ out:
     End Sub
 
     Dim receivedCommand As Boolean = False
+    Public cachedString = ""
     Private Sub comPort_DataReceived(ByVal sender As Object, ByVal e As System.IO.Ports.SerialDataReceivedEventArgs)
         Try
             Dim str As String = ""
@@ -125,7 +116,9 @@ out:
                     'comPort.Read(byteBuffer, 0, bytecount)
                     'str = str & System.Text.Encoding.ASCII.GetString(byteBuffer, 0, 1)
                     If str = "" Then Exit Do
+
                     Me.Invoke(Sub() ListBox1.Items.Add("Comanda primita: " & str))
+
                     Me.Invoke(Sub() Panel1.VerticalScroll.Maximum = ListBox1.Height)
                     Dim response As String = ""
                     Select Case str.Trim
@@ -133,7 +126,15 @@ out:
                             comPort.Write(response("@"))
                             System.Threading.Thread.Sleep(1)
                             comPort.Write(response("$"))
-                        Case "GET  1", "wheather"
+                        Case "GET  a", "wheather"
+
+                            If Not cachedString = "" Then
+                                comPort.Write(cachedString)
+                                Me.Invoke(Sub() ListBox1.Items.Add("Comanda trimisa: " & cachedString))
+                                cachedString = ""
+                                receivedCommand = False
+                                Return
+                            End If
                             If Not receivedCommand Then
                                 receivedCommand = True
                             Else
@@ -141,25 +142,40 @@ out:
                                 Return
                             End If
                             response = getRequest(routes.weatherForecast & "/1")
-                        Case "GET  2", "account"
+                        Case "GET  b", "account"
+                            If Not cachedString = "" Then
+                                comPort.Write(cachedString)
+                                Me.Invoke(Sub() ListBox1.Items.Add("Comanda trimisa: " & cachedString))
+                                cachedString = ""
+                                receivedCommand = False
+                                Return
+                            End If
                             If Not receivedCommand Then
                                 receivedCommand = True
                             Else
                                 receivedCommand = False
                                 Return
                             End If
+
                             response = getRequest(routes.weatherForecast & "/2")
+
+                        Case "GET  c"
+                            comPort.Write("p")
+                            Return
                     End Select
                     If response <> "" Then
                         If (response.Length = 1) Then response = "0" & str
+                        response = response.Replace("-", "0")
                         If (response.Length > 2) Then response = "99"
 
-                        For i As Integer = 0 To response.Length - 1
-                            comPort.Write(response(i))
-                            System.Threading.Thread.Sleep(100)
-                        Next
+                        comPort.Write(response.Substring(0, 1))
+                        cachedString = response.Substring(1, 1)
+                        'For i As Integer = 0 To response.Length - 1
+                        '    comPort.Write(response(i))
+                        '    System.Threading.Thread.Sleep(100)
+                        'Next
 
-                        Me.Invoke(Sub() ListBox1.Items.Add("Comanda trimisa: " & response))
+                        Me.Invoke(Sub() ListBox1.Items.Add("Comanda trimisa: " & response.Substring(0, 1)))
                         Me.Invoke(Sub() Panel1.VerticalScroll.Maximum = ListBox1.Height)
                     End If
                 Loop
@@ -179,22 +195,12 @@ out:
         End If
     End Sub
 
-    Private Sub comPort_DataReceived123(sender As Object, e As Object)
-        MsgBox("sss")
-
-    End Sub
-    Private Sub comPort_DataReceived1234(sender As Object, e As Object)
-        MsgBox("sss")
-
-    End Sub
-
     Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
         Disconnect()
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
-        comPort.Write(TextBox3.Text & Environment.NewLine)
-        comPort.Write(Environment.NewLine)
+        comPort.Write(TextBox3.Text)
         TextBox3.Text = ""
     End Sub
 End Class
